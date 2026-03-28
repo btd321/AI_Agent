@@ -4,7 +4,8 @@ from google import genai
 import argparse
 from google.genai import types
 from prompts import system_prompt
-from call_function import available_functions
+from call_function import available_functions 
+import call_function
 
 def main():
     load_dotenv()
@@ -34,12 +35,25 @@ def main():
         print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
         print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
     
-    print(f'Response:')
     if response.function_calls == None:
+        print(f'Response:')
         print(response.text)
     else:
+        function_responses = []
         for function_call in response.function_calls:
-            print(f"Calling function: {function_call.name}({function_call.args})")
+            function_call_result = call_function.call_function(function_call,args.verbose)
+            if function_call_result.parts == None:
+                raise Exception   
+            if function_call_result.parts[0].function_response == None:
+                raise Exception
+            if function_call_result.parts[0].function_response.response == None:
+                raise Exception
+            function_responses.append(function_call_result.parts[0])
+            if args.verbose == True:
+                print(f"-> {function_call_result.parts[0].function_response.response}")
+
+     
+
 
 if __name__ == "__main__":
     main()
